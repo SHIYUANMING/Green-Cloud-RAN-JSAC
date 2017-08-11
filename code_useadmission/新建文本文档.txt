@@ -1,0 +1,35 @@
+while sum(K_activeset)~=0
+    params.K_activeset=K_activeset;
+    params.M_activeindex=M_activeindex;
+    params.K_index=K_index;
+    params.rankone=true;
+    params.weight=1/eita*ones(L,1);
+    params.ebs=0.8;
+    params.d=1;
+    [W,feasible]=powermin_mdr(params);
+    sinr=ones(length(K_activeset),sum(K_set))*10^(Q(lq)/10);
+    for i=1:1:length(K_activeset)
+        m=M_activeindex(i);
+        for k=1:1:K_activeset(i)
+            kk=K_index(sum(K_activeset(1:i-1))+k);
+            ki=K_index(sum(K_activeset(1:i-1))+k)-sum(K_set(1:m-1));
+            inter_i=(norm(W'*H(:,m,ki,lp)))^2-(norm(W(:,i)'*H(:,m,ki,lp)))^2;
+            if (norm(W(:,i)'*H(:,m,ki,lp)))^2/(inter_i+params.delta_set(i)^2)>=params.r_set(i)
+                sinr(i,kk)=params.r_set(i);
+            else sinr(i,kk)=(norm(W(:,i)'*H(:,m,ki,lp)))^2/(inter_i+params.delta_set(i)^2);
+            end
+        end
+    end
+    sinr_min=min(sinr(:));
+    [sinrx,sinry]=find(sinr==sinr_min);
+    if sinr_min~=10^(Q(lq)/10)
+        K_activeset(sinrx)=K_activeset(sinrx)-1;
+        if K_activeset(sinrx)==0
+            K_activeset(sinrx)=[];
+            M_activeindex(sinrx)=[];
+        end%%%
+        K_index=setdiff(params.K_index,sinry);
+    else user_set_mdr(lq)=sum(K_activeset);  break;
+            
+    end
+end
